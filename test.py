@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 plt.style.use("dark_background")
 df = pd.read_csv('~/apm.csv', dtype={"TotalTime": float})
@@ -7,8 +8,23 @@ df = pd.read_csv('~/apm.csv', dtype={"TotalTime": float})
 totalTime = df["TotalTime"] * 1000     #.plot.hist(bins=10, alpha=0.5)
 totalTime = totalTime.drop(50)
 
-print(totalTime.head)
-totalTime.plot.hist(bins=[0, 100, 200, 500, 1000, 2000, 5000, 1000000], logx=True)
+insertTime = df["TotalTime"] * 1000     #.plot.hist(bins=10, alpha=0.5)
+for i in range(1, 4):
+    insertTime -= df[f"Stroke{i}"] * 1000
+
+insertTimeNp = np.array(insertTime)
+mean = np.mean(insertTimeNp);
+std = np.std(insertTimeNp);
+sweetSweetFrame = insertTime.loc[(abs(insertTime - mean) < 3 * std)]
+print(std)
+
+bins = [std / i for i in range(10, 1, -1)]
+bins.append(std * 0.75)
+bins.append(std)
+bins.append(std * 2)
+bins.append(std * 3)
+sweetSweetFrame.plot.hist(bins=bins)
+
 plt.show()
 
 # df["TARGET"] = df.TitalTime.apply(lambda x: "short" if x<0.3 else ("medium" if x<=0.6 else "long"))
