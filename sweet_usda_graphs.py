@@ -5,7 +5,9 @@ plt.style.use("dark_background")
 sec2ms = 1000
 
 # load it baby
-df = pd.read_csv("apm.csv", dtype={"TotalTime": float})
+df = pd.read_csv("~/apm.csv", dtype={"TotalTime": float})
+# df = df.loc([df["KeyBucket"].isin(["i", "I", "a", "A"])
+
 totalTime = df["TotalTime"]
 
 # must get a copy to avoid mutation of the "TotalTime" array.
@@ -15,11 +17,14 @@ insertTime = df["TotalTime"].copy()
 insertTime *= sec2ms
 insertTime.name = "insertTime"
 for i in range(1, 4):
+    df[f"Stroke{i}"].replace(
+      '[^0-9]+.-', 0, regex=True)
+    print("Strokes", df[f"Stroke{i}"].head)
     insertTime -= df[f"Stroke{i}"] * sec2ms
 
 # plot magic
 insertTime.hist(bins=100)
 plt.title("vim-apm insertTime")
 plt.xlabel("ms")
-plt.xlim([0, 2000])
+plt.xlim([0, 5000])
 plt.show()
