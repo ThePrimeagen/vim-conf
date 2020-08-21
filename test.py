@@ -13,8 +13,8 @@ for i in range(1, 4):
     insertTime -= df[f"Stroke{i}"] * 1000
 
 insertTimeNp = np.array(insertTime)
-mean = np.mean(insertTimeNp);
-std = np.std(insertTimeNp);
+mean = np.mean(insertTimeNp)
+std = np.std(insertTimeNp)
 sweetSweetFrame = insertTime.loc[(abs(insertTime - mean) < 3 * std)]
 print(std)
 
