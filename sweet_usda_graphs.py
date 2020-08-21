@@ -16,10 +16,7 @@ insertTime = df["TotalTime"].copy()
 # prepare data to ms
 insertTime *= sec2ms
 insertTime.name = "insertTime"
-for i in range(1, 4):
-    df[f"Stroke{i}"].replace(
-      '[^0-9]+.-', 0, regex=True)
-    print("Strokes", df[f"Stroke{i}"].head)
+for i in range(1, 5):
     insertTime -= df[f"Stroke{i}"] * sec2ms
 
 # plot magic
