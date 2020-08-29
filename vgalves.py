@@ -12,6 +12,7 @@ plt.style.use(["science", "notebook", "vibrant", "high-vis"])
 #  uncomment the line below and comment the plt.style lone above
 # plt.style.use(["science", "no-latex", "notebook", "vibrant", "high-vis"])
 
+plt.style.use("dark_background")
 
 def plot(df, name):
     dfNp = np.array(df)
@@ -86,29 +87,39 @@ def getDataSet(path, isinList=False, invertList=False, insertionTimeOnly=True):
 if __name__ == "__main__":
 
     isinList = ["o", "O", "i", "I", "a", "A"]
+    isinList2 = ["cw", "cc", "ci*", "cf*", "ct*", "ca*", "C"]
+    isinList3 = ["dwi", "di**", "df**", "dt**", "da**"]
     invertList = False
-    insertionTimeOnly = True
+    insertionTimeOnly = False
 
     print("HERE IS MY FILE TJ")
     tj = getDataSet(
-        "data/tj.apm.csv",
-        isinList=isinList,
-        invertList=invertList,
+        "data/out.csv",
+        isinList=isinList2,
+        invertList=False,
         insertionTimeOnly=insertionTimeOnly,
     )
-    tj.name = "TJ Dev"
+    tj.name = "Cs"
 
     print("HERE IS MY FILE Primeagen")
     me = getDataSet(
-        "data/apm.csv"
-        isinList=isinList,
-        invertList=invertList,
+        "data/out.csv",
+        isinList=isinList3,
+        invertList=False,
         insertionTimeOnly=insertionTimeOnly,
     )
-    me.name = "The Primeagen"
+    me.name = "Ds"
+
+    iandAs = getDataSet(
+        "data/out.csv",
+        isinList=isinList,
+        invertList=False,
+        insertionTimeOnly=insertionTimeOnly,
+    )
+    iandAs.name = "IAO"
 
     # concatenate both as columns
-    frames = pd.concat([tj, me], sort=False, axis=1)
+    frames = pd.concat([tj, me, iandAs], sort=False, axis=1)
     frames.boxplot(showfliers=False)
     plt.ylabel("InsertTime (ms)")
     plt.show()
