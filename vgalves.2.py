@@ -111,12 +111,12 @@ def get_dataset_regex_licenced(csv_path, list_of_cmd, insertionTimeOnly=True):
         for i in range(1, 4):
             total_time -= raw_df[f"Stroke{i}"] * 1000
 
-
     return total_time
 
 
 if __name__ == "__main__":
     # comparing insert time between users
+    """
     users = {
         "The Primeagen": "data/apm.csv",
         "TJ": "data/tj.apm.csv",
@@ -124,19 +124,26 @@ if __name__ == "__main__":
         "Mccannch": "data/mccannch.apm.csv",
         "To": "data/to.apm.csv",
     }
+"""
+    users = {
+        "all": "data/combined_8_28.csv",
+    }
+
+    keyBuckets = ["i", "a", "o", "d", "c"]
 
     insertionTimeOnly = False
     max_time = 4000
     time_array = np.linspace(40, max_time, 1000)
 
     # select the letter for the vim command
-    for regex_query in ["i", "a", "o", "d", "c"]:
+    for k, apm_file in users.items():
 
         datas = []
-        for k, apm_file in users.items():
+        for keyBucket in keyBuckets:
             insert_time = get_dataset_regex_licenced(
-                apm_file, regex_query, insertionTimeOnly=insertionTimeOnly
+                apm_file, keyBucket, insertionTimeOnly=insertionTimeOnly
             )
+            print("InsertTime", len(insert_time), keyBucket, apm_file)
             insert_time.name = k
             datas.append(insert_time)
 
@@ -154,7 +161,7 @@ if __name__ == "__main__":
             ax.set_xlabel("NeoVim - InsertTime (ms)")
             ax.set_ylabel("probability density function (PDF)")
             ax.set_title(
-                f"VIM command starting with '{regex_query}' - case insensitive"
+                f"VIM command starting with '{keyBucket}' - case insensitive"
             )
             plt.legend()
         plt.show()
