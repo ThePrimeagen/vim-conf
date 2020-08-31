@@ -111,14 +111,11 @@ def get_dataset_regex_licenced(csv_path, list_of_cmd, insertionTimeOnly=True):
         for i in range(1, 4):
             total_time -= raw_df[f"Stroke{i}"] * 1000
 
+
     return total_time
 
 
 if __name__ == "__main__":
-    # invertList = False
-    # select the letter for the vim command
-    regex_query = "d"
-    insertionTimeOnly = True
     # comparing insert time between users
     users = {
         "The Primeagen": "data/apm.csv",
@@ -128,28 +125,36 @@ if __name__ == "__main__":
         "To": "data/to.apm.csv",
     }
 
-    datas = []
-    for k, apm_file in users.items():
-        insert_time = get_dataset_regex_licenced(
-            apm_file, regex_query, insertionTimeOnly=insertionTimeOnly
-        )
-        insert_time.name = k
-        datas.append(insert_time)
+    insertionTimeOnly = False
+    max_time = 4000
+    time_array = np.linspace(40, max_time, 1000)
 
-    data2plot = pd.concat(datas, sort=False, axis=1)
-    # plot asymmetrical density estimator
-    # I does not assume gaussian distribution.
-    fig, ax = plt.subplots()
-    max_time = 2000
-    time_array = np.linspace(40, max_time, 10000)
-    frames = data2plot
-    for col in frames.columns:
-        sweetSweetFrame = frames[col].dropna()
-        n = len(sweetSweetFrame)
-        ige = ImproperGammaEstimator(sweetSweetFrame, "plugin")
-        ax.plot(time_array, ige(time_array), label=f"{col} - N={n}")
-        ax.set_xlabel("NeoVim - InsertTime (ms)")
-        ax.set_ylabel("probability density function (PDF)")
-        ax.set_title(f"VIM command starting with '{regex_query}' - case insensitive")
-        plt.legend()
-    plt.show()
+    # select the letter for the vim command
+    for regex_query in ["iao", "d", "c"]:
+
+        datas = []
+        for k, apm_file in users.items():
+            insert_time = get_dataset_regex_licenced(
+                apm_file, regex_query, insertionTimeOnly=insertionTimeOnly
+            )
+            insert_time.name = k
+            datas.append(insert_time)
+
+        data2plot = pd.concat(datas, sort=False, axis=1)
+
+        # plot asymmetrical density estimator
+        # I does not assume gaussian distribution.
+        fig, ax = plt.subplots()
+        frames = data2plot
+        for col in frames.columns:
+            sweetSweetFrame = frames[col].dropna()
+            n = len(sweetSweetFrame)
+            ige = ImproperGammaEstimator(sweetSweetFrame, "plugin")
+            ax.plot(time_array, ige(time_array), label=f"{col} - N={n}")
+            ax.set_xlabel("NeoVim - InsertTime (ms)")
+            ax.set_ylabel("probability density function (PDF)")
+            ax.set_title(
+                f"VIM command starting with '{regex_query}' - case insensitive"
+            )
+            plt.legend()
+        plt.show()
