@@ -2,7 +2,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-plt.style.use("dark_background")
+# this package must be installed from the source using the command
+# pip install git+https://github.com/tillahoffmann/asymmetric_kde.git
+from asymmetric_kde import ImproperGammaEstimator
+
+# pip install git+https://github.com/garrettj403/SciencePlots.git
+plt.style.use(["science", "notebook", "vibrant", "high-vis"])
+# if you do not like the beauty and pain of using latex
+#  uncomment the line below and comment the plt.style lone above
+# plt.style.use(["science", "no-latex", "notebook", "vibrant", "high-vis"])
+
 
 def plot(df, name):
     dfNp = np.array(df)
@@ -48,9 +57,13 @@ def plot(df, name):
     plt.xlim([0, 3000])
     plt.show()
 
-def getDataSet(path, isinList = False, invertList = False, insertionTimeOnly = True):
 
-    df = pd.read_csv(path, dtype={"TotalTime": float})
+def getDataSet(path, isinList=False, invertList=False, insertionTimeOnly=True):
+
+    df = pd.read_csv(path)
+    # clean non numeric on totalTime array and NAN
+    df["TotalTime"] = pd.to_numeric(df["TotalTime"], errors="coerce")
+    df = df.loc[~df["TotalTime"].isna()]
 
     if isinList:
         inList = df["KeyStrokes"].isin(isinList)
@@ -59,62 +72,65 @@ def getDataSet(path, isinList = False, invertList = False, insertionTimeOnly = T
         else:
             df = df[inList]
 
-    totalTime = df["TotalTime"] * 1000     #.plot.hist(bins=10, alpha=0.5)
+    totalTime = df["TotalTime"] * 1000  # .plot.hist(bins=10, alpha=0.5)
 
     if insertionTimeOnly:
         for i in range(1, 4):
             totalTime -= df[f"Stroke{i}"] * 1000
 
-    print("Datafram length", len(df))
+    print("Dataframe length", len(df))
+
     return totalTime
 
 
-isinList = ["o", "O", "i", "I", "a", "A"]
-invertList = False
-insertionTimeOnly = True
+if __name__ == "__main__":
 
-tj = getDataSet("~/tj.apm.csv", isinList=isinList, invertList=invertList, insertionTimeOnly=insertionTimeOnly)
-me = getDataSet("~/apm.csv", isinList=isinList, invertList=invertList, insertionTimeOnly=insertionTimeOnly)
+    isinList = ["o", "O", "i", "I", "a", "A"]
+    invertList = False
+    insertionTimeOnly = True
 
-frames = [tj, me]
+    tj = getDataSet(
+        "tj.apm.csv",
+        isinList=isinList,
+        invertList=invertList,
+        insertionTimeOnly=insertionTimeOnly,
+    )
+    tj.name = "TJ Dev"
 
-plot(pd.concat(frames, sort=False), "All")
+    me = getDataSet(
+        "apm.csv",
+        isinList=isinList,
+        invertList=invertList,
+        insertionTimeOnly=insertionTimeOnly,
+    )
+    me.name = "The Primeagen"
 
-# df["TARGET"] = df.TitalTime.apply(lambda x: "short" if x<0.3 else ("medium" if x<=0.6 else "long"))
-
-"""
-grouped = df.groupby("KeyBucket")
-for name, group in grouped:
-    total = group["TotalTime"] * 1000     #.plot.hist(bins=10, alpha=0.5)
-    total.plot.hist(bins=[0, 100, 200, 500, 1000, 2000, 5000, 1000000], logx=True)
-    plt.title(name)
+    # concatenate both as columns
+    frames = pd.concat([tj, me], sort=False, axis=1)
+    frames.boxplot(showfliers=False)
+    plt.ylabel("InsertTime (ms)")
     plt.show()
 
-"""
-"""
-grouped = df.groupby("KeyBucket")
-print(grouped.groups)
+    # Plot histograms
 
-for name, group in grouped:
-    print(name)
-    group.plot(kind='scatter', x='KeyStrokes', y='TotalTime',color='red')
+    for col in frames.columns:
+        data = frames[col].dropna()
+        plot(data, col)
+        plt.xlabel("InsertTime (ms)")
+
+    # plot asymmetrical density estimator
+    # I does not assume gaussian distribution.
+    fig, ax = plt.subplots()
+    max_time = 3000
+    time_array = np.linspace(0, max_time, 100000)
+    for col in frames.columns:
+        data = frames[col].dropna()
+        sweetSweetFrame = data.loc[data < max_time]
+        ige = ImproperGammaEstimator(sweetSweetFrame, "plugin")
+        ax.plot(time_array, ige(time_array), label=col)
+        ax.set_xlim([0, 1000])
+        ax.set_xlabel("NeoVim - InsertTime (ms)")
+        ax.set_ylabel("probability density function (PDF)")
+        ax.set_title("kernel density estimation using asymmric kernels")
+        plt.legend()
     plt.show()
-
-"""
-"""
-xAxis = []
-yAxis = []
-
-file = open("", "r")
-
-for x in range(0, 3):
-    xAxis.append(x)
-    yAxis.append(x / 3)
-
-plt.style.use("dark_background")
-plt.scatter(xAxis, yAxis)
-plt.title('title name')
-plt.xlabel('xAxis name')
-plt.ylabel('yAxis name')
-plt.show()
-"""
