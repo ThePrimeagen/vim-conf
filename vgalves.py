@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import re
 
 # this package must be installed from the source using the command
 # pip install git+https://github.com/tillahoffmann/asymmetric_kde.git
@@ -13,6 +14,7 @@ plt.style.use(["science", "notebook", "vibrant", "high-vis"])
 # plt.style.use(["science", "no-latex", "notebook", "vibrant", "high-vis"])
 
 plt.style.use("dark_background")
+
 
 def plot(df, name):
     dfNp = np.array(df)
@@ -61,11 +63,11 @@ def plot(df, name):
 
 def getDataSet(path, isinList=False, invertList=False, insertionTimeOnly=True):
 
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, engine="c")
     # clean non numeric on totalTime array and NAN
     df["TotalTime"] = pd.to_numeric(df["TotalTime"], errors="coerce")
     df = df.loc[~df["TotalTime"].isna()]
-
+    # df['KeyStrokes'].unique()
     if isinList:
         inList = df["KeyStrokes"].isin(isinList)
         if invertList:
@@ -84,67 +86,70 @@ def getDataSet(path, isinList=False, invertList=False, insertionTimeOnly=True):
     return totalTime
 
 
+def get_dataset_regex_licenced(csv_path, list_of_cmd, insertionTimeOnly=True):
+    """
+        Load a dataset and filter based on the starting char of a vim command
+    :param csv_path: path_to_csv_file
+    :param list_of_cmd: string with the chars to capture,e.g. inserting mode chars 'aoi'
+    :return:
+    """
+
+    # let it try to load and fail
+    raw_df = pd.read_csv(csv_path)
+    # clean non numeric on totalTime array and NAN
+    raw_df["TotalTime"] = pd.to_numeric(raw_df["TotalTime"], errors="coerce")
+    raw_df = raw_df.loc[~raw_df["TotalTime"].isna()]
+
+    filtered_index = raw_df["KeyStrokes"].str.match(
+        rf"^([{list_of_cmd}])", flags=re.IGNORECASE
+    )
+
+    filtered_df = raw_df.loc[filtered_index]
+    total_time = filtered_df["TotalTime"] * 1000
+
+    if insertionTimeOnly:
+        for i in range(1, 4):
+            total_time -= raw_df[f"Stroke{i}"] * 1000
+
+    return total_time
+
+
 if __name__ == "__main__":
+    # invertList = False
+    # select the letter for the vim command
+    regex_query = "d"
+    insertionTimeOnly = True
+    # comparing insert time between users
+    users = {
+        "The Primeagen": "data/apm.csv",
+        "TJ": "data/tj.apm.csv",
+        "Brandon": "data/brandon.cc.apm.csv",
+        "Mccannch": "data/mccannch.apm.csv",
+        "To": "data/to.apm.csv",
+    }
 
-    isinList = ["o", "O", "i", "I", "a", "A"]
-    isinList2 = ["cw", "cc", "ci*", "cf*", "ct*", "ca*", "C"]
-    isinList3 = ["dwi", "di**", "df**", "dt**", "da**"]
-    invertList = False
-    insertionTimeOnly = False
+    datas = []
+    for k, apm_file in users.items():
+        insert_time = get_dataset_regex_licenced(
+            apm_file, regex_query, insertionTimeOnly=insertionTimeOnly
+        )
+        insert_time.name = k
+        datas.append(insert_time)
 
-    print("HERE IS MY FILE TJ")
-    tj = getDataSet(
-        "data/out.csv",
-        isinList=isinList2,
-        invertList=False,
-        insertionTimeOnly=insertionTimeOnly,
-    )
-    tj.name = "Cs"
-
-    print("HERE IS MY FILE Primeagen")
-    me = getDataSet(
-        "data/out.csv",
-        isinList=isinList3,
-        invertList=False,
-        insertionTimeOnly=insertionTimeOnly,
-    )
-    me.name = "Ds"
-
-    iandAs = getDataSet(
-        "data/out.csv",
-        isinList=isinList,
-        invertList=False,
-        insertionTimeOnly=insertionTimeOnly,
-    )
-    iandAs.name = "IAO"
-
-    # concatenate both as columns
-    frames = pd.concat([tj, me, iandAs], sort=False, axis=1)
-    frames.boxplot(showfliers=False)
-    plt.ylabel("InsertTime (ms)")
-    plt.show()
-
-    # Plot histograms
-
-    for col in frames.columns:
-        data = frames[col].dropna()
-        plot(data, col)
-        plt.xlabel("InsertTime (ms)")
-
+    data2plot = pd.concat(datas, sort=False, axis=1)
     # plot asymmetrical density estimator
     # I does not assume gaussian distribution.
     fig, ax = plt.subplots()
-    max_time = 3000
-    time_array = np.linspace(0, max_time, 100000)
+    max_time = 2000
+    time_array = np.linspace(40, max_time, 10000)
+    frames = data2plot
     for col in frames.columns:
-        data = frames[col].dropna()
-        sweetSweetFrame = data.loc[data < max_time]
+        sweetSweetFrame = frames[col].dropna()
+        n = len(sweetSweetFrame)
         ige = ImproperGammaEstimator(sweetSweetFrame, "plugin")
-        ax.plot(time_array, ige(time_array), label=col)
-        ax.set_xlim([0, 1000])
+        ax.plot(time_array, ige(time_array), label=f"{col} - N={n}")
         ax.set_xlabel("NeoVim - InsertTime (ms)")
         ax.set_ylabel("probability density function (PDF)")
-        ax.set_title("kernel density estimation using asymmric kernels")
+        ax.set_title(f"VIM command starting with '{regex_query}' - case insensitive")
         plt.legend()
     plt.show()
-
