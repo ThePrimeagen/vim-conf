@@ -101,7 +101,7 @@ def get_dataset_regex_licenced(csv_path, list_of_cmd, insertionTimeOnly=True):
     raw_df = raw_df.loc[~raw_df["TotalTime"].isna()]
 
     filtered_index = raw_df["KeyStrokes"].str.match(
-        rf"^([{list_of_cmd}])", flags=re.IGNORECASE
+        rf"^({list_of_cmd})", flags=re.IGNORECASE
     )
 
     filtered_df = raw_df.loc[filtered_index]
@@ -118,11 +118,14 @@ def get_dataset_regex_licenced(csv_path, list_of_cmd, insertionTimeOnly=True):
 if __name__ == "__main__":
     # comparing insert time between users
     users = {
-        "The Primeagen": "data/apm.csv",
-        "TJ": "data/tj.apm.csv",
-        "Brandon": "data/brandon.cc.apm.csv",
-        "Mccannch": "data/mccannch.apm.csv",
-        "To": "data/to.apm.csv",
+        "The Primeagen": [
+            ["data/apm.no-cdw.csv", "i", "d"],
+            # ["data/apm.cdw.csv", "cw", "dw"]
+        ],
+        "TJ": [
+            ["data/tj.apm.no-cdw.csv", "i", "c", "d"],
+            # ["data/tj.apm.cdw.csv", "cw", "dw"]
+        ],
     }
 
     insertionTimeOnly = False
@@ -130,15 +133,23 @@ if __name__ == "__main__":
     time_array = np.linspace(40, max_time, 1000)
 
     # select the letter for the vim command
-    for regex_query in ["i", "a", "o", "d", "c"]:
+    for k, apm_files in users.items():
 
         datas = []
-        for k, apm_file in users.items():
-            insert_time = get_dataset_regex_licenced(
-                apm_file, regex_query, insertionTimeOnly=insertionTimeOnly
-            )
-            insert_time.name = k
-            datas.append(insert_time)
+        for idx in range(0, len(apm_files)):
+            apm_file = apm_files[idx][0]
+            keyStrokes = apm_files[idx][1:]
+            print("Item", keyStrokes, apm_file)
+            for sIdx in range(0, len(keyStrokes)):
+                stroke = keyStrokes[sIdx]
+                print("    stroke", stroke)
+                insert_time = get_dataset_regex_licenced(
+                    apm_file, stroke, insertionTimeOnly=insertionTimeOnly
+                )
+                insert_time.name = k
+
+                print("Insert", insert_time)
+                datas.append(insert_time)
 
         data2plot = pd.concat(datas, sort=False, axis=1)
 
@@ -154,7 +165,7 @@ if __name__ == "__main__":
             ax.set_xlabel("NeoVim - InsertTime (ms)")
             ax.set_ylabel("probability density function (PDF)")
             ax.set_title(
-                f"VIM command starting with '{regex_query}' - case insensitive"
+                f"VIM command starting with '{k}' - case insensitive"
             )
             plt.legend()
         plt.show()
