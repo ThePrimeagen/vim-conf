@@ -116,18 +116,21 @@ def get_dataset_regex_licenced(csv_path, list_of_cmd, insertionTimeOnly=True):
 
 if __name__ == "__main__":
     # comparing insert time between users
+    users = {
+        "TJ": "data/tj.apm.csv",
+    }
     """
     users = {
-        "The Primeagen": "data/apm.csv",
-        "TJ": "data/tj.apm.csv",
-        "Brandon": "data/brandon.cc.apm.csv",
-        "Mccannch": "data/mccannch.apm.csv",
-        "To": "data/to.apm.csv",
+        "ThePrimeagen": [
+            ["data/apm.no-cdw.csv", "i", "d", "c"],
+            ["data/apm.cdw.csv", "c", "d"]
+        ],
+        "TJ": [
+            ["data/tj.apm.no-cdw.csv", "i", "d", "c"],
+            ["data/tj.apm.cdw.csv", "c", "d"]
+        ],
     }
-"""
-    users = {
-        "all": "data/combined_8_28.csv",
-    }
+    """
 
     keyBuckets = ["i", "a", "o", "d", "c"]
 
